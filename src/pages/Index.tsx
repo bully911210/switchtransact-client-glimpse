@@ -5,11 +5,49 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { getApiStatus, getClientDetails } from "@/services/api";
 
+// Define interfaces for API response types
+interface Subscription {
+  id?: number;
+  date_start: string;
+  status: string;
+  products?: {
+    id: number;
+    name: string;
+    amount: number;
+    description?: string;
+  }[];
+}
+
+interface BankAccount {
+  id?: number;
+  bank_name: string;
+  account_number: string;
+  account_type: string;
+  status: string;
+}
+
+interface ClientData {
+  status: 'success' | 'error' | 'not_found';
+  message?: string;
+  data?: {
+    id?: number;
+    id_number: string;
+    name: string;
+    surname: string;
+    contact_cell?: string;
+    email?: string;
+    date_created?: string;
+    status?: string;
+    subscriptions?: Subscription[];
+    bank_accounts?: BankAccount[];
+  };
+}
+
 const Index = () => {
   const [idNumber, setIdNumber] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [apiStatus, setApiStatus] = useState({ status: "UNKNOWN", message: "" });
-  const [clientData, setClientData] = useState(null);
+  const [clientData, setClientData] = useState<ClientData | null>(null);
   const { toast } = useToast();
 
   // Check API status on component mount
@@ -56,15 +94,18 @@ const Index = () => {
       // Update API status
       setApiStatus({ status: "OK", message: "API responded successfully" });
 
+      // Log the actual API response structure
+      console.log('API Response:', JSON.stringify(data, null, 2));
+
       // Set client data
       setClientData(data);
 
-      // Check if data is empty
-      if (!data.record) {
+      // Check if data is empty or has no results
+      if (!data || (data.status && data.status === 'error')) {
         toast({
           variant: "default",
           title: "No results",
-          description: "No client found with this ID number"
+          description: data.message || "No client found with this ID number"
         });
       }
     } catch (error) {
@@ -99,11 +140,7 @@ const Index = () => {
             </span>
           </div>
 
-          <div className="mt-4 max-w-2xl mx-auto bg-blue-50 text-blue-800 p-3 rounded-md text-sm border border-blue-200">
-            <p className="font-medium">⚠️ Demo Mode Active</p>
-            <p>This demo is using mock data due to CORS restrictions with the real API.</p>
-            <p className="text-xs mt-1">In a production environment, you would need a backend proxy or proper CORS headers.</p>
-          </div>
+
         </header>
 
         <main>
@@ -125,10 +162,7 @@ const Index = () => {
                 {isLoading ? "Searching..." : "Look Up"}
               </Button>
             </div>
-            <div className="mt-3 text-sm text-gray-500 bg-gray-50 p-3 rounded">
-              <p className="font-medium">Demo Mode:</p>
-              <p>Try ID number: <span className="font-mono bg-gray-200 px-1 rounded">7608210157080</span></p>
-            </div>
+
           </div>
 
           <div className="max-w-2xl mx-auto mt-8 bg-white p-6 rounded-lg shadow-sm">
@@ -137,29 +171,41 @@ const Index = () => {
                 <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
                 <p className="mt-2 text-gray-600">Loading client details...</p>
               </div>
-            ) : clientData && clientData.record ? (
+            ) : clientData && clientData.status === 'success' && clientData.data ? (
               <div>
                 <h3 className="text-lg font-semibold mb-4">Client Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 bg-gray-50 rounded">
                     <p className="text-sm font-medium text-gray-500">Name</p>
-                    <p className="text-gray-900">{clientData.record.name} {clientData.record.surname}</p>
+                    <p className="text-gray-900">{clientData.data.name} {clientData.data.surname}</p>
                   </div>
                   <div className="p-4 bg-gray-50 rounded">
                     <p className="text-sm font-medium text-gray-500">ID Number</p>
-                    <p className="text-gray-900">{clientData.record.id_number}</p>
+                    <p className="text-gray-900">{clientData.data.id_number}</p>
                   </div>
                   <div className="p-4 bg-gray-50 rounded">
                     <p className="text-sm font-medium text-gray-500">Contact</p>
-                    <p className="text-gray-900">{clientData.record.contact_cell || 'N/A'}</p>
+                    <p className="text-gray-900">{clientData.data.contact_cell || 'N/A'}</p>
                   </div>
                   <div className="p-4 bg-gray-50 rounded">
                     <p className="text-sm font-medium text-gray-500">Email</p>
-                    <p className="text-gray-900">{clientData.record.email || 'N/A'}</p>
+                    <p className="text-gray-900">{clientData.data.email || 'N/A'}</p>
                   </div>
+                  {clientData.data.date_created && (
+                    <div className="p-4 bg-gray-50 rounded">
+                      <p className="text-sm font-medium text-gray-500">Date Created</p>
+                      <p className="text-gray-900">{clientData.data.date_created}</p>
+                    </div>
+                  )}
+                  {clientData.data.status && (
+                    <div className="p-4 bg-gray-50 rounded">
+                      <p className="text-sm font-medium text-gray-500">Status</p>
+                      <p className="text-gray-900 capitalize">{clientData.data.status}</p>
+                    </div>
+                  )}
                 </div>
 
-                {clientData.subscriptions && clientData.subscriptions.length > 0 && (
+                {clientData.data.subscriptions && clientData.data.subscriptions.length > 0 && (
                   <div className="mt-6">
                     <h3 className="text-lg font-semibold mb-4">Subscriptions</h3>
                     <div className="overflow-x-auto">
@@ -172,14 +218,14 @@ const Index = () => {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {clientData.subscriptions.map((sub, index) => (
+                          {clientData.data.subscriptions.map((sub: Subscription, index: number) => (
                             <tr key={index}>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{sub.date_start}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{sub.status}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {sub.products && sub.products.length > 0 ? (
                                   <ul className="list-disc pl-5">
-                                    {sub.products.map((product, idx) => (
+                                    {sub.products.map((product: any, idx: number) => (
                                       <li key={idx}>{product.name} - R{(product.amount / 100).toFixed(2)}</li>
                                     ))}
                                   </ul>
@@ -192,6 +238,39 @@ const Index = () => {
                     </div>
                   </div>
                 )}
+
+                {clientData.data.bank_accounts && clientData.data.bank_accounts.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-semibold mb-4">Bank Accounts</h3>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bank</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Number</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Type</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {clientData.data.bank_accounts.map((account: BankAccount, index: number) => (
+                            <tr key={index}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{account.bank_name}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{account.account_number}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{account.account_type}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{account.status}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : clientData && clientData.status === 'error' ? (
+              <div className="text-center text-red-500 py-8">
+                <p className="font-medium">Error</p>
+                <p>{clientData.message || 'An error occurred while fetching client details'}</p>
               </div>
             ) : (
               <div className="text-center text-gray-500">

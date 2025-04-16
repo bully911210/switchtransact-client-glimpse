@@ -1,17 +1,13 @@
 // API service for SwitchTransact API
 
-// NOTE: Due to CORS restrictions, we're using a mock implementation
-// In a production environment, you would need to:
-// 1. Set up a backend proxy server
-// 2. Request CORS headers to be added to the API
-// 3. Use a CORS proxy service
+// API base URL - using local proxy to avoid CORS issues
+const API_BASE_URL = '/api';
 
-// Original API URL (commented out due to CORS issues)
-// const API_BASE_URL = 'https://app.switchtransact.com/api/1.0';
-// const API_KEY = 'e68066d75428a2a405798eef139cc89749c75cda5445d7ac92dbb9e9383bd76b';
+// API key
+const API_KEY = 'e68066d75428a2a405798eef139cc89749c75cda5445d7ac92dbb9e9383bd76b';
 
-// Mock data flag - set to true to use mock data instead of real API
-const USE_MOCK_DATA = true;
+// Mock data flag - set to false to use real API
+const USE_MOCK_DATA = false;
 
 // Interface for client details request
 interface ClientDetailsRequest {
@@ -43,16 +39,41 @@ export const getApiStatus = async (): Promise<ApiStatusResponse> => {
   }
 
   try {
-    // In a real app with a proper backend proxy, you would call your proxy endpoint
-    // For now, this code is unreachable due to USE_MOCK_DATA = true
-    const response = await fetch('/api/status');
-    const data = await response.json();
+    // Make a lightweight call to check API status
+    console.log('Checking API status with URL:', `${API_BASE_URL}/lookups?type=Bank`);
+    console.log('Using API key:', API_KEY);
 
-    return {
-      status: data.status,
-      message: data.message,
-      timestamp: data.timestamp || Math.floor(Date.now() / 1000)
-    };
+    const response = await fetch(`${API_BASE_URL}/lookups?type=Bank`, {
+      method: 'GET',
+      headers: {
+        'Authorization': API_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('API status response:', response.status, response.statusText);
+
+    if (response.ok) {
+      // Try to parse the response to see if it's valid JSON
+      try {
+        const data = await response.clone().json();
+        console.log('API status response data:', data);
+      } catch (parseError) {
+        console.error('Failed to parse API status response:', parseError);
+      }
+
+      return {
+        status: 'OK',
+        message: 'API is responding normally',
+        timestamp: Math.floor(Date.now() / 1000)
+      };
+    } else {
+      return {
+        status: 'ERROR',
+        message: `API returned status ${response.status}`,
+        timestamp: Math.floor(Date.now() / 1000)
+      };
+    }
   } catch (error) {
     console.error('API status check failed:', error);
     return {
@@ -117,21 +138,28 @@ export const getClientDetails = async (request: ClientDetailsRequest) => {
   }
 
   try {
-    // In a real app with a proper backend proxy, you would call your proxy endpoint
-    // For now, this code is unreachable due to USE_MOCK_DATA = true
-    const response = await fetch('/api/client-details', {
+    // Call the API through our local proxy
+    console.log('Fetching client details with URL:', `${API_BASE_URL}/workflow/people/details`);
+    console.log('Request payload:', JSON.stringify(request, null, 2));
+
+    const response = await fetch(`${API_BASE_URL}/workflow/people/details`, {
       method: 'POST',
       headers: {
+        'Authorization': API_KEY,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(request)
     });
 
+    console.log('Client details response:', response.status, response.statusText);
+
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log('Client details response data:', JSON.stringify(data, null, 2));
+    return data;
   } catch (error) {
     console.error('Failed to fetch client details:', error);
     throw error;
