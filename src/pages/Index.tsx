@@ -98,6 +98,12 @@ const Index = () => {
               {apiStatus.status}
             </span>
           </div>
+
+          <div className="mt-4 max-w-2xl mx-auto bg-blue-50 text-blue-800 p-3 rounded-md text-sm border border-blue-200">
+            <p className="font-medium">⚠️ Demo Mode Active</p>
+            <p>This demo is using mock data due to CORS restrictions with the real API.</p>
+            <p className="text-xs mt-1">In a production environment, you would need a backend proxy or proper CORS headers.</p>
+          </div>
         </header>
 
         <main>
@@ -118,6 +124,10 @@ const Index = () => {
               >
                 {isLoading ? "Searching..." : "Look Up"}
               </Button>
+            </div>
+            <div className="mt-3 text-sm text-gray-500 bg-gray-50 p-3 rounded">
+              <p className="font-medium">Demo Mode:</p>
+              <p>Try ID number: <span className="font-mono bg-gray-200 px-1 rounded">7608210157080</span></p>
             </div>
           </div>
 
