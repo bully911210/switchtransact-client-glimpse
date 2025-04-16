@@ -1,73 +1,76 @@
-# Welcome to your Lovable project
 
-## Project info
+# SwitchTransact Client Viewer (Read-Only)
 
-**URL**: https://lovable.dev/projects/12c881ae-2a73-4aad-b21b-840edd0bef07
+A secure, read-only web application for viewing SwitchTransact client details.
 
-## How can I edit this code?
+## System Requirements
 
-There are several ways of editing your application.
+- Python 3.x
+- pip (Python package manager)
 
-**Use Lovable**
+## Setup Instructions
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/12c881ae-2a73-4aad-b21b-840edd0bef07) and start prompting.
+1. **Clone this repository**
 
-Changes made via Lovable will be committed automatically to this repo.
+2. **Set up the environment variable**:
 
-**Use your preferred IDE**
+   Create a `.env` file in the project root directory with the following content:
+   ```
+   SWITCHTRANSACT_API_KEY=e68066d75428a2a405798eef139cc89749c75cda5445d7ac92dbb9e9383bd76b
+   ```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+   Alternatively, set the environment variable in your shell:
+   ```bash
+   export SWITCHTRANSACT_API_KEY=e68066d75428a2a405798eef139cc89749c75cda5445d7ac92dbb9e9383bd76b
+   ```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+3. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-Follow these steps:
+## Running the Application
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Development Mode
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```bash
+python app.py
 ```
 
-**Edit a file directly in GitHub**
+The application will be available at http://127.0.0.1:5000
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Production Mode (with Gunicorn)
 
-**Use GitHub Codespaces**
+```bash
+gunicorn -w 4 -b 0.0.0.0:8000 app:app
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+The application will be available at http://your-server-ip:8000
 
-## What technologies are used for this project?
+## Troubleshooting
 
-This project is built with:
+If you encounter any issues:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. Check the application logs for error messages:
+   - API connection problems will show detailed information about what failed
+   - Input validation errors will be logged
 
-## How can I deploy this project?
+2. Verify that the `SWITCHTRANSACT_API_KEY` environment variable is correctly set.
 
-Simply open [Lovable](https://lovable.dev/projects/12c881ae-2a73-4aad-b21b-840edd0bef07) and click on Share -> Publish.
+3. Check network connectivity to the SwitchTransact API server.
 
-## Can I connect a custom domain to my Lovable project?
+## Security Notes
 
-Yes, you can!
+- This application is read-only - it only fetches data and cannot modify any records
+- No user authentication is implemented - the application itself does not manage user sessions
+- No database is used - all operations are stateless between requests
+- The application only calls a single endpoint: `/workflow/people/details`
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## API Status Indicator
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+The application includes a visual API status indicator:
+- Green: API is responding normally
+- Red: API error occurred
+- Gray: API status unknown (not yet checked)
+
+Hover over the indicator to see the detailed status message.
