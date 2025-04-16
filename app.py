@@ -74,7 +74,7 @@ def check_client():
     # Prepare request to SwitchTransact API
     url = "https://app.switchtransact.com/api/1.0/workflow/people/details"
     headers = {
-        "Authorization": "e68066d75428a2a405798eef139cc89749c75cda5445d7ac92dbb9e9383bd76b",
+        "Authorization": api_key,
         "Content-Type": "application/json"
     }
     body = {
