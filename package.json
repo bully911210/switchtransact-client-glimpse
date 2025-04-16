@@ -1,8 +1,9 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "switchtransact-client-glimpse",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://bully911210.github.io/switchtransact-client-glimpse/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
