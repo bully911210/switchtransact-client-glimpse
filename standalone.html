@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIG Solutions Client Information Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen p-4">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <header class="bg-white p-4 rounded-lg shadow mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <div>
+                        <label for="productSelector" class="sr-only">Select Product</label>
+                        <select
+                            id="productSelector"
+                            aria-label="Select Product"
+                            title="Select Product"
+                            class="text-sm border border-gray-300 rounded px-2 py-1"
+                        >
+                            <option value="dear-sa" selected>DearSA</option>
+                            <option value="tlu-sa" disabled>TLU SA (Coming Soon)</option>
+                            <option value="free-sa" disabled>FreeSA (Coming Soon)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold">SIG Solutions</h1>
+                        <p class="text-gray-600 text-center">Client Information Portal</p>
+                    </div>
+                    <div>
+                        <span class="px-3 py-1 bg-gray-100 rounded-full text-sm">
+                            API: <span id="apiStatus" class="font-semibold text-gray-600">Checking...</span>
+                        </span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Search Form -->
+            <div class="bg-white p-4 rounded-lg shadow mb-4">
+                <div class="flex gap-2">
+                    <input
+                        type="text"
+                        id="idNumberInput"
+                        placeholder="Enter Client ID Number"
+                        class="flex-1 border border-gray-300 rounded px-3 py-2"
+                        maxlength="13"
+                    />
+                    <button
+                        id="searchButton"
+                        type="button"
+                        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                    >
+                        Search
+                    </button>
+                </div>
+                <p id="errorMessage" class="text-red-500 mt-2 hidden"></p>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="bg-white p-4 rounded-lg shadow text-center hidden">
+                <p>Loading...</p>
+            </div>
+
+            <!-- Results -->
+            <div id="resultsContainer" class="bg-white p-4 rounded-lg shadow hidden">
+                <h2 class="text-xl font-semibold mb-4">Client Information</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h3 class="font-medium mb-2">Personal Details</h3>
+                        <p><span class="font-medium">Name:</span> <span id="clientName"></span></p>
+                        <p><span class="font-medium">ID Number:</span> <span id="clientIdNumber"></span></p>
+                        <p><span class="font-medium">Contact:</span> <span id="clientContact"></span></p>
+                        <p><span class="font-medium">Email:</span> <span id="clientEmail"></span></p>
+                        <p><span class="font-medium">Status:</span> <span id="clientStatus"></span></p>
+                        <p><span class="font-medium">Debit Success Ratio:</span> <span id="debitRatio"></span></p>
+                    </div>
+
+                    <div>
+                        <h3 class="font-medium mb-2">Subscription Details</h3>
+                        <div id="subscriptionDetails">
+                            <p><span class="font-medium">Start Date:</span> <span id="subStartDate"></span></p>
+                            <p><span class="font-medium">Status:</span> <span id="subStatus"></span></p>
+                            <p><span class="font-medium">Product:</span> <span id="subProduct"></span></p>
+                            <p><span class="font-medium">Amount:</span> <span id="subAmount"></span></p>
+                        </div>
+                        <div id="noSubscription" class="hidden">
+                            <p>No subscription information available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="bg-white p-4 rounded-lg shadow text-center">
+                <p class="text-gray-500">Enter an ID number and click "Search" to view client details</p>
+                <p class="text-gray-400 text-sm mt-2">Format: South African ID Number (13 digits)</p>
+            </div>
+
+            <footer class="mt-4 text-center text-gray-500 text-sm">
+                <p>&copy; <span id="currentYear"></span> SIG Solutions - Secure Information Portal</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // Set current year in footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // API Configuration - using the exact URL and format as instructed
+        const API_BASE_URL = 'https://app.switchtransact.com/api/1.0';
+
+        // Product configurations
+        const PRODUCTS = {
+            'dear-sa': {
+                name: 'DearSA',
+                apiKey: 'e68066d75428a2a405798eef139cc89749c75cda5445d7ac92dbb9e9383bd76b'
+            },
+            'tlu-sa': {
+                name: 'TLU SA',
+                apiKey: '' // Not configured yet
+            },
+            'free-sa': {
+                name: 'FreeSA',
+                apiKey: '' // Not configured yet
+            }
+        };
+
+        // Current product and API key
+        let currentProduct = 'dear-sa';
+        let API_KEY = PRODUCTS[currentProduct].apiKey;
+
+        // API Status element
+        const apiStatusElement = document.getElementById('apiStatus');
+        const productSelector = document.getElementById('productSelector');
+
+        // Simple API status check function
+        function checkApiStatus() {
+            apiStatusElement.textContent = 'Checking...';
+            apiStatusElement.className = 'font-semibold text-gray-600';
+
+            // Use a simple GET request to check if the API is accessible
+            fetch(`${API_BASE_URL}/lookups?type=Bank`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': API_KEY,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    apiStatusElement.textContent = 'OK';
+                    apiStatusElement.className = 'font-semibold text-green-600';
+                    console.log('API is working!');
+                } else {
+                    apiStatusElement.textContent = 'ERROR';
+                    apiStatusElement.className = 'font-semibold text-red-600';
+                    console.log(`API returned status ${response.status}`);
+                }
+            })
+            .catch(error => {
+                apiStatusElement.textContent = 'ERROR';
+                apiStatusElement.className = 'font-semibold text-red-600';
+                console.error('API check failed:', error);
+            });
+        }
+
+        // Handle product selection change
+        productSelector.addEventListener('change', function() {
+            currentProduct = this.value;
+            API_KEY = PRODUCTS[currentProduct].apiKey;
+            checkApiStatus();
+        });
+
+        // Check API status on page load
+        checkApiStatus();
+
+
+
+        // DOM elements
+        const idNumberInput = document.getElementById('idNumberInput');
+        const searchButton = document.getElementById('searchButton');
+        const errorMessage = document.getElementById('errorMessage');
+        const loadingState = document.getElementById('loadingState');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const emptyState = document.getElementById('emptyState');
+
+        // Client details elements
+        const clientName = document.getElementById('clientName');
+        const clientIdNumber = document.getElementById('clientIdNumber');
+        const clientContact = document.getElementById('clientContact');
+        const clientEmail = document.getElementById('clientEmail');
+        const clientStatus = document.getElementById('clientStatus');
+        const debitRatio = document.getElementById('debitRatio');
+
+        // Subscription elements
+        const subscriptionDetails = document.getElementById('subscriptionDetails');
+        const noSubscription = document.getElementById('noSubscription');
+        const subStartDate = document.getElementById('subStartDate');
+        const subStatus = document.getElementById('subStatus');
+        const subProduct = document.getElementById('subProduct');
+        const subAmount = document.getElementById('subAmount');
+
+        // Only allow numeric input
+        idNumberInput.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        // Function to fetch client details from API with timeout
+        async function fetchClientDetails(idNumber) {
+            try {
+                // Prepare request payload exactly as specified in the requirements
+                const requestPayload = {
+                    id_number: idNumber,
+                    record: true,
+                    subscriptions: true
+                    // No other fields as per the strict requirements
+                };
+
+                console.log('Fetching client details for ID:', idNumber);
+
+                // Check if API key is available
+                if (!API_KEY) {
+                    throw new Error(`No API key configured for ${PRODUCTS[currentProduct].name}. Please select DearSA.`);
+                }
+
+                // Make API request with the exact format as instructed
+                const response = await fetch(`${API_BASE_URL}/workflow/people/details`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': API_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestPayload)
+                });
+
+                console.log('API response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('API response data:', data);
+
+                // Handle different response formats
+                if (data && data.status === 'error') {
+                    throw new Error(data.message || 'API returned an error');
+                }
+
+                // Check if data is wrapped
+                if (data && data.data) {
+                    return data.data;
+                }
+
+                return data;
+            } catch (error) {
+                console.error('Error fetching client details:', error);
+                throw error;
+            }
+        }
+
+        // Handle search button click
+        searchButton.addEventListener('click', async function() {
+            const idNumber = idNumberInput.value.trim();
+
+            // Reset UI
+            errorMessage.classList.add('hidden');
+            errorMessage.textContent = '';
+
+            // Validate input
+            if (!idNumber) {
+                errorMessage.textContent = 'Please enter an ID number';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            if (idNumber.length < 10) {
+                errorMessage.textContent = 'ID number must be at least 10 digits';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            // Show loading state
+            emptyState.classList.add('hidden');
+            resultsContainer.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+
+            try {
+                // Use real API
+                const clientData = await fetchClientDetails(idNumber);
+                loadingState.classList.add('hidden');
+
+                if (!clientData || !clientData.record) {
+                    errorMessage.textContent = 'No client found with this ID number';
+                    errorMessage.classList.remove('hidden');
+                    emptyState.classList.remove('hidden');
+                } else {
+                    displayClientData(clientData);
+                    resultsContainer.classList.remove('hidden');
+                }
+            } catch (error) {
+                loadingState.classList.add('hidden');
+                errorMessage.textContent = `Error: ${error.message || 'Failed to fetch client details'}`;
+                errorMessage.classList.remove('hidden');
+                emptyState.classList.remove('hidden');
+            }
+        });
+
+        // Display client data
+        function displayClientData(data) {
+            console.log('Displaying client data:', data);
+
+            // Personal details
+            clientName.textContent = `${data.record.name} ${data.record.surname}`;
+            clientIdNumber.textContent = data.record.id_number;
+            clientContact.textContent = data.record.contact_cell || 'N/A';
+            clientEmail.textContent = data.record.email || 'N/A';
+
+            // Status can be in different fields depending on API response
+            const status = data.record.status ||
+                          (data.record.is_active !== undefined ?
+                           (data.record.is_active ? 'Active' : 'Inactive') : 'Unknown');
+            clientStatus.textContent = status;
+
+            // Debit success ratio
+            const successful = data.record.total_successful_transactions || 0;
+            const failed = data.record.total_failed_transactions || 0;
+            const total = successful + failed;
+
+            if (total === 0) {
+                debitRatio.textContent = 'No transactions';
+            } else {
+                const ratio = (successful / total * 100).toFixed(1);
+                debitRatio.textContent = `${ratio}% (${successful}/${total})`;
+            }
+
+            // Subscription details
+            if (data.subscriptions && data.subscriptions.length > 0) {
+                const subscription = data.subscriptions[0];
+
+                subStartDate.textContent = subscription.date_start;
+                subStatus.textContent = subscription.status;
+
+                if (subscription.products && subscription.products.length > 0) {
+                    const product = subscription.products[0];
+                    subProduct.textContent = product.name;
+
+                    // Handle amount formatting - don't divide by 100
+                    const amount = typeof product.amount === 'number' ?
+                                  product.amount :
+                                  parseFloat(product.amount || '0');
+                    subAmount.textContent = `R${amount.toFixed(2)}`;
+                } else {
+                    subProduct.textContent = 'N/A';
+                    subAmount.textContent = 'N/A';
+                }
+
+                subscriptionDetails.classList.remove('hidden');
+                noSubscription.classList.add('hidden');
+            } else {
+                subscriptionDetails.classList.add('hidden');
+                noSubscription.classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

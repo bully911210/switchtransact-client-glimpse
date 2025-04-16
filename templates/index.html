@@ -4,14 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SwitchTransact Client Viewer (Read-Only)</title>
+    <title>SIG Solutions Client Information Portal</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>SwitchTransact Client Viewer</h1>
-            <p class="subtitle">Secure Read-Only Access</p>
+            <h1>SIG Solutions Client Information Portal</h1>
             <div id="api-status-container">
                 <span>API Status: </span>
                 <span id="api-status-indicator" class="status-unknown">UNKNOWN</span>
@@ -24,7 +23,7 @@
                 <div class="input-group">
                     <label for="id-number-input">Enter Client ID Number:</label>
                     <input type="text" id="id-number-input" placeholder="e.g., 7608210157080" maxlength="13">
-                    <button id="check-button">Look Up Client</button>
+                    <button type="button" id="check-button">Look Up Client</button>
                 </div>
             </div>
 
@@ -38,7 +37,7 @@
         </main>
 
         <footer>
-            <p>&copy; 2025 SwitchTransact Client Viewer - Secure Read-Only System</p>
+            <p>&copy; 2024 SIG Solutions - Secure Information Portal</p>
         </footer>
     </div>
 
