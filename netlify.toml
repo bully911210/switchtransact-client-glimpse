@@ -1,3 +1,4 @@
+
 [build]
   publish = "."
   
@@ -6,4 +7,10 @@
   to = "https://app.switchtransact.com/api/1.0/:splat"
   status = 200
   force = true
-  headers = {X-From = "Netlify"}
+  headers = {X-From = "Netlify", Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS", Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept, Authorization"}
+
+# This ensures that all routes are handled by the index.html file
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

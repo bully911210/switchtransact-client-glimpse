@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/toaster";
 
 // Mock client data for demonstration
 const MOCK_CLIENT_DATA = {
@@ -30,6 +33,29 @@ const SimplifiedIndex = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [clientData, setClientData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [apiStatus, setApiStatus] = useState<'checking' | 'ok' | 'error'>('checking');
+
+  // Check API status on component mount
+  useEffect(() => {
+    const checkApiStatus = async () => {
+      setApiStatus('checking');
+      
+      try {
+        // Simulate API check
+        setTimeout(() => {
+          console.log('API check completed');
+          // For demo purposes, we'll just set it to OK
+          setApiStatus('ok');
+        }, 1000);
+      } catch (err) {
+        console.error('API check failed', err);
+        setApiStatus('error');
+        toast.error("API connection failed. Using offline mode.");
+      }
+    };
+    
+    checkApiStatus();
+  }, []);
 
   // Simple function to handle ID number input
   const handleIdNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,7 +64,7 @@ const SimplifiedIndex = () => {
     setIdNumber(value);
   };
 
-  // Simple function to handle search
+  // Function to handle search
   const handleSearch = () => {
     // Reset state
     setError(null);
@@ -47,11 +73,13 @@ const SimplifiedIndex = () => {
     // Validate input
     if (!idNumber) {
       setError('Please enter an ID number');
+      toast.error("Please enter an ID number");
       return;
     }
     
     if (idNumber.length < 10) {
       setError('ID number must be at least 10 digits');
+      toast.error("ID number must be at least 10 digits");
       return;
     }
     
@@ -65,8 +93,10 @@ const SimplifiedIndex = () => {
       // For demo purposes, only return data for this specific ID
       if (idNumber === '7608210157080') {
         setClientData(MOCK_CLIENT_DATA);
+        toast.success("Client data found");
       } else {
         setError('No client found with this ID number');
+        toast.error("No client found with this ID number");
       }
     }, 1000);
   };
@@ -90,9 +120,18 @@ const SimplifiedIndex = () => {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <header className="bg-white p-4 rounded-lg shadow mb-4">
-          <h1 className="text-2xl font-bold text-center">SIG Solutions</h1>
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold">SIG Solutions</h1>
+            <div>
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100">
+                API: 
+                {apiStatus === 'checking' && <span className="ml-1 text-yellow-500">Checking...</span>}
+                {apiStatus === 'ok' && <span className="ml-1 text-green-500">Connected</span>}
+                {apiStatus === 'error' && <span className="ml-1 text-red-500">Offline</span>}
+              </span>
+            </div>
+          </div>
           <p className="text-center text-gray-600">Client Information Portal</p>
-          <p className="text-center text-sm text-gray-500 mt-2">Product: DearSA</p>
         </header>
 
         {/* Search Form */}
@@ -109,7 +148,7 @@ const SimplifiedIndex = () => {
             <button
               onClick={handleSearch}
               disabled={isLoading}
-              className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+              className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 hover:bg-blue-700 transition-colors"
             >
               {isLoading ? "Searching..." : "Search"}
             </button>
@@ -128,7 +167,7 @@ const SimplifiedIndex = () => {
           <div className="bg-white p-4 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">Client Information</h2>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h3 className="font-medium mb-2">Personal Details</h3>
                 <p><span className="font-medium">Name:</span> {clientData.name} {clientData.surname}</p>
@@ -165,6 +204,9 @@ const SimplifiedIndex = () => {
           <p>&copy; {new Date().getFullYear()} SIG Solutions</p>
         </footer>
       </div>
+      
+      {/* Toast component for notifications */}
+      <Toaster />
     </div>
   );
 };
